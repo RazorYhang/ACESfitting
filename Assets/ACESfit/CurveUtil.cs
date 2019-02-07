@@ -178,7 +178,7 @@ public class CubicBezier : CurveSegment<float>
     }
 }
 
-public class MonotoneCubicBezier : CurveSegment<float>
+public class MonotonicCubicBezier : CurveSegment<float>
 {
     protected Vector2 m_angPoint;
     protected float m_ctrStart;
@@ -227,7 +227,7 @@ public class MonotoneCubicBezier : CurveSegment<float>
         }
     }
 
-    public MonotoneCubicBezier()
+    public MonotonicCubicBezier()
     {
         m_curve = new CubicBezier();
         Set(Vector2.zero, Vector2.one, new Vector2(0.5f, 0));
@@ -235,6 +235,7 @@ public class MonotoneCubicBezier : CurveSegment<float>
 
     protected void Constrain()
     {
+        // make the curve monotonic:
         float xMax = Mathf.Max(m_curve.P3.x, m_curve.P0.x);
         float xMin = Mathf.Min(m_curve.P3.x, m_curve.P0.x);
         float yMax = Mathf.Max(m_curve.P3.y, m_curve.P0.y);
@@ -450,17 +451,17 @@ public class FilmicCurveHable : CurveSegment<float>
 }
 #endregion
 
-#region FilmicCurve
+#region Tunable ACES Curve
 
-public class FilmicCurve : CurveSegment<float>
+public class TunableACEScurve : CurveSegment<float>
 {
     public Vector2 Toe { get { return m_toe; }set { if (value == m_toe) return; m_toe = value; SetDirty(); } }
     public Vector2 Shoulder { get { return m_shoulder; } }
     public Vector2 ToeAnglePoint { get { return m_toeAngPt; } }
     public Vector2 ShoulderAnglePoint { get { return m_ShoulderAngPt; } }
     public Vector2 WhitePoint { get { return m_whitePoint; } set { if (value == WhitePoint) return; m_whitePoint = value; SetDirty(); } }
-    public float ShoulderAngle { get { return m_shoulderAngle; } set { if (value == m_shoulderAngle) return; m_shoulderAngle = value; SetDirty(); } }
-    public float ShoulderShoot { get { return m_shoulderShoot; } set { if (value == m_shoulderShoot) return; m_shoulderShoot = value; SetDirty(); } }
+    public float ShootAngle { get { return m_shoulderAngle; } set { if (value == m_shoulderAngle) return; m_shoulderAngle = value; SetDirty(); } }
+    public float Shoot { get { return m_shoulderShoot; } set { if (value == m_shoulderShoot) return; m_shoulderShoot = value; SetDirty(); } }
     public float ToeStrength { get { return m_toeStr; } set { if (value == m_toeStr) return; m_toeStr = value; SetDirty(); } }
     public float ToeLift { get { return m_toeLift; } set { if (value == m_toeLift) return; m_toeLift = value; SetDirty(); } }
     public float ShoulderStrength { get { return m_shoulderStr; } set { if (value == m_shoulderStr) return; m_shoulderStr = value; SetDirty(); } }
@@ -482,7 +483,7 @@ public class FilmicCurve : CurveSegment<float>
     protected CurveSegment<float>[] m_segments;
     protected bool m_isDataDirty = false;
 
-    public FilmicCurve()
+    public TunableACEScurve()
     {
         m_blackPoint = Vector2.zero;
         m_toe = new Vector2(.25f,25f);
@@ -492,9 +493,9 @@ public class FilmicCurve : CurveSegment<float>
         m_ShoulderAngPt = Vector2.zero;
 
         m_segments = new CurveSegment<float>[4];
-        m_segments[0] = new MonotoneCubicBezier();
+        m_segments[0] = new MonotonicCubicBezier();
         m_segments[1] = new LinearCurveSegment();
-        m_segments[2] = new MonotoneCubicBezier();
+        m_segments[2] = new MonotonicCubicBezier();
         m_segments[3] = new ConstantCurveSegment();
 
         Reconstruct();
@@ -532,10 +533,10 @@ public class FilmicCurve : CurveSegment<float>
         m_whitePoint.x = Mathf.Max(m_whitePoint.x, minWhitepointX);
 
         // clamp lift and strength:
-        m_toeLift = Mathf.Clamp01(m_toeLift);
-        m_toeStr = Mathf.Clamp01(m_toeStr);
-        m_shoulderLift = Mathf.Clamp01(m_shoulderLift);
-        m_shoulderStr = Mathf.Clamp01(m_shoulderStr);
+        //m_toeLift = Mathf.Clamp01(m_toeLift);
+        //m_toeStr = Mathf.Clamp01(m_toeStr);
+        //m_shoulderLift = Mathf.Clamp01(m_shoulderLift);
+        //m_shoulderStr = Mathf.Clamp01(m_shoulderStr);
 
         // set toe angle point:
         float intersect = m_toe.y - m_toe.x * slope;
@@ -548,14 +549,14 @@ public class FilmicCurve : CurveSegment<float>
         m_ShoulderAngPt = new Vector2(minWhitepointX, m_whitePoint.y);
 
         // set curve segments:
-        MonotoneCubicBezier toeCurve =  m_segments[0] as MonotoneCubicBezier;
+        MonotonicCubicBezier toeCurve =  m_segments[0] as MonotonicCubicBezier;
         toeCurve.Set(m_blackPoint, m_toe, m_toeAngPt, m_toeStr, m_toeLift);
 
         LinearCurveSegment linearPart = m_segments[1] as LinearCurveSegment;
         linearPart.intersect = intersect;
         linearPart.slope = slope;
 
-        MonotoneCubicBezier shoulderCurve = m_segments[2] as MonotoneCubicBezier;
+        MonotonicCubicBezier shoulderCurve = m_segments[2] as MonotonicCubicBezier;
         shoulderCurve.Set(m_shoulder, m_whitePoint, m_ShoulderAngPt, m_shoulderLift, m_shoulderStr);
 
         ConstantCurveSegment constPart = m_segments[3] as ConstantCurveSegment;
@@ -694,7 +695,7 @@ public class ACESfitting
     }
 
     // Fit aces curve ((x * (a * x + b)) / (x * (c * x + d) + 1)) with arbitrary data _curveSampleX and _curveSampleY using LSR method.
-    // result is stored in result as a,b,c,d.
+    // result is stored as a,b,c,d.
     protected static bool FitRawACESFunction(List<double> _curveSampleX, List<double> _curveSampleY, out float a, out float b, out float c, out float d)
     {
         // Create linear equation:
@@ -747,7 +748,7 @@ public class ACESfitting
     }
 
     // prepare the data for fitting (x, y, dxdy, ddxddy)
-    protected static void PrepareCurveData(FilmicCurve _curve, Config _cfg,  ref CurveDataSet _result)
+    protected static void PrepareCurveData(TunableACEScurve _curve, Config _cfg,  ref CurveDataSet _result)
     {
         double _maxX = _cfg.fitRange.y, _minX = _cfg.fitRange.x;
         int _dataCount = _cfg.initSampleCount;
@@ -838,7 +839,7 @@ public class ACESfitting
         return (float)finalStdDev;
     }
 
-    public static float Fit(FilmicCurve _originalCurve, ref ACEStonemappingCurve _result, Config _cfg, out CurveDataSet _orgData, out List<double> _sampleBufferX , out List<double> _sampleBufferY )
+    public static float Fit(TunableACEScurve _originalCurve, ref ACEStonemappingCurve _result, Config _cfg, out CurveDataSet _orgData, out List<double> _sampleBufferX , out List<double> _sampleBufferY )
     {
         _sampleBufferX = new List<double>();
         _sampleBufferY = new List<double>();
@@ -850,7 +851,7 @@ public class ACESfitting
         return IterationFit(_originalCurve, _orgData, _sampleBufferX, _sampleBufferY, _cfg, ref _result); 
     } 
 
-    public static float Fit(FilmicCurve _originalCurve, ref ACEStonemappingCurve _result, Config _cfg)
+    public static float Fit(TunableACEScurve _originalCurve, ref ACEStonemappingCurve _result, Config _cfg)
     {
         CurveDataSet _orgData = null;
         List<double> _sampleBufferX = null;

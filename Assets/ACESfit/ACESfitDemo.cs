@@ -16,7 +16,7 @@ public class ACESfitDemo : MonoBehaviour {
     public bool debugResetCurve = false;
     protected float pointGizmosSize = 0.02f;
     protected float sampleGizmosSize = 0.01f;
-    protected Color sampleColor = new Color(0, 0, 0);
+    protected Color sampleColor = new Color(1, .25f, 0);
     protected Color _1orderDrevCol = new Color(1, .5f, 0);
     protected Color _2orderDrevCol = new Color(1, 1, 0);
     protected Color _editorCurveColor = new Color(1, 0, 0);
@@ -26,10 +26,10 @@ public class ACESfitDemo : MonoBehaviour {
     #endregion
 
     [SerializeField]
-    public FilmicCurve curve = new FilmicCurve();
+    public TunableACEScurve curve = new TunableACEScurve();
     public Vector2 toe = new Vector2(.05f, .05f);
-    public float shoulderAng = 45.0f;
-    public float shoulderShoot = 10.0f;
+    public float shootAngle = 45.0f;
+    public float shootDistance = 10.0f;
     public Vector2 pWhite = new Vector2(5, 1);
     public Vector2 toeCtr = new Vector2(50.0f, 50.0f);
     public Vector2 shoulderCtr = new Vector2(50.0f, 50.0f);
@@ -41,7 +41,7 @@ public class ACESfitDemo : MonoBehaviour {
 
     public ACEStonemappingCurve acesCurve = new ACEStonemappingCurve();
 
-    public MonotoneCubicBezier mCurve = new MonotoneCubicBezier();
+    public MonotonicCubicBezier mCurve = new MonotonicCubicBezier();
 
 
     List<double> _tmpX;
@@ -49,10 +49,23 @@ public class ACESfitDemo : MonoBehaviour {
 
     CurveDataSet data = null;
 
+    const float A = 17.928571f;
+    const float B = 0.214285f;
+    const float C = 17.3571f;
+    const float D = 4.21428f;
+    const float E = 1.0f;
+    const float whitePoint = 50.0f;
+
+    void Start()
+    {
+        Shader.SetGlobalVector("param", new Vector4(A,B,C,D));
+        Shader.SetGlobalFloat("whitePoint", whitePoint);
+    }
+
     void Update () {
         curve.Toe = toe/100.0f;
-        curve.ShoulderAngle = shoulderAng;
-        curve.ShoulderShoot = shoulderShoot/100.0f;
+        curve.ShootAngle = shootAngle;
+        curve.Shoot = shootDistance/100.0f;
         curve.WhitePoint = pWhite;
         curve.ToeStrength = toeCtr.x / 100.0f;
         curve.ToeLift = toeCtr.y / 100.0f;
@@ -67,8 +80,8 @@ public class ACESfitDemo : MonoBehaviour {
             ACESfitting.Fit(curve, ref acesCurve, fitConfig, out data, out _tmpX, out _tmpY);
             fitWhitePoint = acesCurve.CalculateWhitePoint();
             //Debug.Log(ACEStonemappingCurve.IsParamValid(acesCurve.a, acesCurve.b, acesCurve.c, acesCurve.d, fitConfig.fitRange.y, fitConfig.fitRange.x));
-            Shader.SetGlobalVector("acesFitCurve", new Vector4(acesCurve.a, acesCurve.b, acesCurve.c, acesCurve.d));
-            Shader.SetGlobalFloat("acesCurveWhitePointX", fitWhitePoint);
+            Shader.SetGlobalVector("param", new Vector4(acesCurve.a, acesCurve.b, acesCurve.c, acesCurve.d));
+            Shader.SetGlobalFloat("whitePoint", fitWhitePoint);
         }
 
         if (debugResetCurve)

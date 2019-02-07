@@ -106,7 +106,7 @@ public class CFMtonemapperConfig: ScriptableObject
     public float fitStandardDeviation { get { return m_fitStdDev; } }
     protected float m_fitStdDev = 0.0f;
 
-    protected static FilmicCurve m_tmpOriginalCurve = new FilmicCurve();
+    protected static TunableACEScurve m_tmpOriginalCurve = new TunableACEScurve();
     protected static ACEStonemappingCurve m_tmpAcesCurve = new ACEStonemappingCurve();
     protected static ACESfitting.Config fitConfig = ACESfitting.Config.Default();
 }
