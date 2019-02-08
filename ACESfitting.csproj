@@ -80,7 +80,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\ACESfit\ACESfitDemo.cs" />
-    <Compile Include="Assets\ACESfit\CFMtonemapperConfig.cs" />
     <Compile Include="Assets\ACESfit\CurveUtil.cs" />
   </ItemGroup>
   <ItemGroup>

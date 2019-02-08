@@ -16,7 +16,7 @@ public class ACESfitDemo : MonoBehaviour {
     public bool debugResetCurve = false;
     protected float pointGizmosSize = 0.02f;
     protected float sampleGizmosSize = 0.01f;
-    protected Color sampleColor = new Color(1, .25f, 0);
+    protected Color sampleColor = new Color(1, 1, 1);
     protected Color _1orderDrevCol = new Color(1, .5f, 0);
     protected Color _2orderDrevCol = new Color(1, 1, 0);
     protected Color _editorCurveColor = new Color(1, 0, 0);
